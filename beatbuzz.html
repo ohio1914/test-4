@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BUZZ — feel the beat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0B0D;
+    --bg2:#16161A;
+    --yellow:#FFD60A;
+    --shock:#FF3864;
+    --text:#F5F5F0;
+    --muted:#8A8A8F;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    padding:env(safe-area-inset-top,24px) 20px calc(env(safe-area-inset-bottom,24px) + 20px);
+    overflow-x:hidden;
+  }
+  .app{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--yellow);
+    margin:8px 0 0;
+  }
+  h1{
+    font-family:'Archivo Black',sans-serif;
+    font-size:54px;
+    line-height:.9;
+    margin:0;
+    letter-spacing:-1px;
+  }
+  .sub{
+    color:var(--muted);
+    font-size:14px;
+    text-align:center;
+    margin:0 0 6px;
+    max-width:320px;
+  }
+  .panel{
+    width:100%;
+    background:var(--bg2);
+    border-radius:14px;
+    padding:14px;
+    display:flex;
+    gap:8px;
+  }
+  .panel input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--text);
+    font-family:'Space Grotesk',sans-serif;
+    font-size:15px;
+    min-width:0;
+  }
+  .panel input::placeholder{color:var(--muted);}
+  .panel button{
+    background:var(--yellow);
+    color:#0B0B0D;
+    border:none;
+    border-radius:10px;
+    padding:0 16px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .error{
+    color:var(--shock);
+    font-size:13px;
+    min-height:16px;
+  }
+  #playerWrap{
+    width:100%;
+    aspect-ratio:16/9;
+    border-radius:14px;
+    overflow:hidden;
+    background:#000;
+    display:none;
+  }
+  #playerWrap.show{display:block;}
+  #player{width:100%;height:100%;}
+
+  .buzzerWrap{position:relative; width:200px; height:200px; margin-top:8px;}
+  #hapticSwitch{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    margin:0;
+    opacity:0.01;
+    z-index:5;
+    border-radius:50%;
+  }
+  .buzzer{
+    position:absolute;
+    inset:0;
+    width:200px;
+    height:200px;
+    border-radius:50%;
+    border:none;
+    cursor:pointer;
+    background:
+      repeating-conic-gradient(from 0deg, var(--yellow) 0deg 10deg, #1a1a1a 10deg 20deg);
+    padding:10px;
+    transition:transform .08s ease;
+  }
+  .buzzer .inner{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    background:var(--bg2);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Archivo Black',sans-serif;
+    font-size:18px;
+    letter-spacing:.04em;
+    text-align:center;
+    line-height:1.25;
+  }
+  .buzzer.active .inner{background:#202028; box-shadow:inset 0 0 0 2px var(--shock);}
+  .buzzer:active{transform:scale(.97);}
+  .buzzer.shake{animation:shake .14s ease;}
+  @keyframes shake{
+    0%{transform:translate(0,0) rotate(0);}
+    25%{transform:translate(-6px,3px) rotate(-3deg);}
+    50%{transform:translate(5px,-4px) rotate(3deg);}
+    75%{transform:translate(-4px,2px) rotate(-2deg);}
+    100%{transform:translate(0,0) rotate(0);}
+  }
+
+  .status{
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+    min-height:18px;
+    margin:0;
+  }
+  .note{
+    color:var(--muted);
+    font-size:12px;
+    line-height:1.5;
+    text-align:center;
+    border-top:1px dashed #2a2a30;
+    padding-top:14px;
+    margin-top:8px;
+  }
+
+  #flash{
+    position:fixed;
+    inset:0;
+    background:var(--shock);
+    opacity:0;
+    pointer-events:none;
+    z-index:50;
+  }
+  #flash.on{opacity:.18;}
+
+  @media (prefers-reduced-motion: reduce){
+    .buzzer.shake{animation:none;}
+    .buzzer.shake .inner{box-shadow:inset 0 0 0 3px var(--shock);}
+  }
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div class="app">
+  <p class="eyebrow">paste · play · feel it</p>
+  <h1>BUZZ</h1>
+  <p class="sub">Drop a YouTube link, hit play, then tap the buzzer. It listens through your mic and buzzes on every beat.</p>
+
+  <div class="panel">
+    <input id="ytUrl" type="url" placeholder="paste a youtube link…" autocapitalize="off" autocorrect="off">
+    <button id="loadBtn">Load</button>
+  </div>
+  <p class="error" id="error"></p>
+
+  <div id="playerWrap"><div id="player"></div></div>
+
+  <div class="buzzerWrap">
+    <button class="buzzer" id="buzzBtn">
+      <span class="inner" id="buzzLabel">TAP TO<br>BUZZ</span>
+    </button>
+    <input type="checkbox" switch id="hapticSwitch" tabindex="-1" aria-hidden="true">
+  </div>
+  <p class="status" id="status">Load a track and hit play first.</p>
+
+  <p class="note">📳 Tapping the buzzer itself fires a real native haptic (a Safari quirk via a hidden iOS switch — works on iOS 17.4–26.4, patched out in 26.5+). The automatic per-beat pulses while listening stay visual-only (shake + flash) since iOS doesn't let scripts fire haptics on their own.</p>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  // ---------- YouTube ----------
+  let player = null;
+  let ytReady = false;
+  window.onYouTubeIframeAPIReady = function(){ ytReady = true; };
+
+  function getYouTubeId(url){
+    const patterns = [
+      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+      /[?&]v=([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/
+    ];
+    for (const p of patterns){ const m = url.match(p); if (m) return m[1]; }
+    return null;
+  }
+
+  const urlInput = document.getElementById('ytUrl');
+  const loadBtn = document.getElementById('loadBtn');
+  const errorEl = document.getElementById('error');
+  const playerWrap = document.getElementById('playerWrap');
+  const statusEl = document.getElementById('status');
+
+  function waitForYT(cb, tries){
+    tries = tries || 0;
+    if (ytReady && window.YT && window.YT.Player) return cb();
+    if (tries > 50) { errorEl.textContent = "YouTube player failed to load — check your connection."; return; }
+    setTimeout(()=>waitForYT(cb, tries+1), 150);
+  }
+
+  loadBtn.addEventListener('click', () => {
+    const id = getYouTubeId(urlInput.value.trim());
+    if (!id){
+      errorEl.textContent = "That doesn't look like a YouTube link.";
+      return;
+    }
+    errorEl.textContent = "";
+    playerWrap.classList.add('show');
+    waitForYT(() => {
+      if (!player){
+        player = new YT.Player('player', {
+          videoId: id,
+          playerVars: { playsinline: 1 }
+        });
+      } else {
+        player.loadVideoById(id);
+      }
+      statusEl.textContent = "Hit play on the video, then tap the buzzer.";
+    });
+  });
+
+  // ---------- Mic-driven beat detection ----------
+  const buzzBtn = document.getElementById('buzzBtn');
+  const buzzLabel = document.getElementById('buzzLabel');
+  const flashEl = document.getElementById('flash');
+
+  let audioCtx, analyser, micStream, dataArr, rafId;
+  let energyHistory = [];
+  let lastBeat = 0;
+  let listening = false;
+
+  async function startListening(){
+    try{
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }catch(e){
+      statusEl.textContent = "Mic access denied — can't feel the beat without it.";
+      return;
+    }
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(micStream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    source.connect(analyser);
+    dataArr = new Uint8Array(analyser.frequencyBinCount);
+    listening = true;
+    buzzBtn.classList.add('active');
+    buzzLabel.innerHTML = "LISTENING<br>TAP TO STOP";
+    statusEl.textContent = "Listening for bass…";
+    energyHistory = [];
+    loop();
+  }
+
+  function stopListening(){
+    listening = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (micStream) micStream.getTracks().forEach(t => t.stop());
+    if (audioCtx) audioCtx.close();
+    micStream = null; audioCtx = null;
+    buzzBtn.classList.remove('active');
+    buzzLabel.innerHTML = "TAP TO<br>BUZZ";
+    statusEl.textContent = "Tap the buzzer to start feeling the beat again.";
+  }
+
+  function loop(){
+    if (!listening) return;
+    analyser.getByteFrequencyData(dataArr);
+    const bassBins = 6; // low frequencies = bass/kick
+    let sum = 0;
+    for (let i = 0; i < bassBins; i++) sum += dataArr[i];
+    const bassAvg = sum / bassBins;
+
+    energyHistory.push(bassAvg);
+    if (energyHistory.length > 43) energyHistory.shift();
+    const baseline = energyHistory.reduce((a,b)=>a+b,0) / energyHistory.length;
+
+    const now = performance.now();
+    if (bassAvg > baseline * 1.4 && bassAvg > 38 && now - lastBeat > 220){
+      triggerBuzz();
+      lastBeat = now;
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function triggerBuzz(){
+    buzzBtn.classList.add('shake');
+    flashEl.classList.add('on');
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.vibrate){
+      window.webkit.messageHandlers.vibrate.postMessage('buzz');
+    } else if (navigator.vibrate){
+      try{ navigator.vibrate(110); }catch(e){}
+    }
+    setTimeout(() => {
+      buzzBtn.classList.remove('shake');
+      flashEl.classList.remove('on');
+    }, 140);
+  }
+
+  const hapticSwitch = document.getElementById('hapticSwitch');
+  hapticSwitch.addEventListener('change', () => {
+    if (listening) stopListening();
+    else startListening();
+  });
+</script>
+</body>
+</html>

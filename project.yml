@@ -1,0 +1,24 @@
+name: BeatBuzzApp
+options:
+  bundleIdPrefix: com.beatbuzz
+targets:
+  BeatBuzzApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - path: Sources
+      - path: beatbuzz.html
+        buildPhase: resources
+    info:
+      path: Generated-Info.plist
+      properties:
+        NSMicrophoneUsageDescription: "Used to listen for the music's beat so it can buzz in time."
+        UILaunchScreen: {}
+        UIRequiredDeviceCapabilities: [armv7]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.beatbuzz.app
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        GENERATE_INFOPLIST_FILE: NO
